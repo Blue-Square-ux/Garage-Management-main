@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Service - Floor Manager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    .form-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/floor-manager/dashboard">Floor Manager Dashboard</a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="/logout">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+    <div class="container mt-4 form-container">
+      <h2>Service Details - Floor Manager Panel</h2>
+
+      <!-- Progress Bar -->
+      <div class="progress mb-4" style="height: 25px;">
+        <div id="serviceProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+             style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+      </div>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <!-- Read-only Guard Information -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5><i class="bi bi-info-circle"></i> Guard Entry Information (Read-Only)</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label"><strong>Vehicle Number Plate:</strong></label>
+            <p class="form-control-plaintext border rounded p-2 bg-light"><%= service.vehicleNumber %></p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><strong>Gate-In Date & Time:</strong></label>
+            <p class="form-control-plaintext border rounded p-2 bg-light"><%= moment(service.gateInDateTime).format('DD/MM/YYYY HH:mm') %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floor Manager Service Form -->
+    <form id="serviceForm" action="/floor-manager/services/edit/<%= service._id %>" method="POST" novalidate>
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="bi bi-gear"></i> Service Configuration</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Vehicle Attended *</label>
+            <div class="input-group">
+              <% if (service.isLocked) { %>
+                <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" placeholder="Name of person attended" value="<%= service.vehicleAttendedBy || '' %>" readonly />
+                <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" placeholder="Time attended" value="<%= service.vehicleAttended || '' %>" readonly />
+                <button type="button" class="btn btn-outline-secondary" id="captureVehicleAttendedTimeBtn" disabled>
+                  Capture Current Time
+                </button>
+              <% } else { %>
+                <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" placeholder="Name of person attended" value="<%= service.vehicleAttendedBy || '' %>" required />
+                <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" placeholder="Time attended" value="<%= service.vehicleAttended || '' %>" required />
+                <button type="button" class="btn btn-outline-secondary" id="captureVehicleAttendedTimeBtn">
+                  Capture Current Time
+                </button>
+              <% } %>
+            </div>
+            <div class="invalid-feedback">Vehicle attended name and time are required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="clientApprovalMethod" class="form-label">Client Approval Method *</label>
+            <% if (service.isLocked) { %>
+              <select class="form-select" id="clientApprovalMethod" name="clientApprovalMethod" disabled>
+                <option value="">Select approval method</option>
+                <option value="SMS" <%= service.clientApprovalMethod === 'SMS' ? 'selected' : '' %>>SMS</option>
+                <option value="WhatsApp" <%= service.clientApprovalMethod === 'WhatsApp' ? 'selected' : '' %>>WhatsApp</option>
+                <option value="Call" <%= service.clientApprovalMethod === 'Call' ? 'selected' : '' %>>Call</option>
+              </select>
+            <% } else { %>
+              <select class="form-select" id="clientApprovalMethod" name="clientApprovalMethod" required>
+                <option value="" disabled selected>Select approval method</option>
+                <option value="SMS" <%= service.clientApprovalMethod === 'SMS' ? 'selected' : '' %>>SMS</option>
+                <option value="WhatsApp" <%= service.clientApprovalMethod === 'WhatsApp' ? 'selected' : '' %>>WhatsApp</option>
+                <option value="Call" <%= service.clientApprovalMethod === 'Call' ? 'selected' : '' %>>Call</option>
+              </select>
+            <% } %>
+            <div class="invalid-feedback">Client approval method is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="workStartedAt" class="form-label">Work Started At *</label>
+            <div class="input-group">
+              <% if (service.isLocked) { %>
+                <input type="text" class="form-control" id="workStartedAt" name="workStartedAt" value="<%= moment(service.workStartedAt).format('YYYY-MM-DD HH:mm:ss') %>" readonly />
+              <% } else { %>
+                <input type="text" class="form-control" id="workStartedAt" name="workStartedAt" value="<%= moment(service.workStartedAt).format('YYYY-MM-DD HH:mm:ss') %>" required />
+              <% } %>
+               <% if (service.isLocked) { %>
+                 <button type="button" class="btn btn-outline-secondary" id="captureWorkStartedAtBtn" disabled>
+                   Capture Current Time
+                 </button>
+               <% } else { %>
+                 <button type="button" class="btn btn-outline-secondary" id="captureWorkStartedAtBtn">
+                   Capture Current Time
+                 </button>
+               <% } %>
+            </div>
+            <div class="invalid-feedback">Work started time is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="assignedHelper" class="form-label">Assigned Helper *</label>
+            <% if (service.isLocked) { %>
+              <select class="form-select" id="assignedHelper" name="assignedHelper" disabled>
+                <option value="">Select helper</option>
+                <option value="Helper1" <%= service.assignedHelper === 'Helper1' ? 'selected' : '' %>>Helper1</option>
+                <option value="Helper2" <%= service.assignedHelper === 'Helper2' ? 'selected' : '' %>>Helper2</option>
+                <option value="Helper3" <%= service.assignedHelper === 'Helper3' ? 'selected' : '' %>>Helper3</option>
+              </select>
+            <% } else { %>
+              <select class="form-select" id="assignedHelper" name="assignedHelper" required>
+                <option value="">Select helper</option>
+                <option value="Helper1" <%= service.assignedHelper === 'Helper1' ? 'selected' : '' %>>Helper1</option>
+                <option value="Helper2" <%= service.assignedHelper === 'Helper2' ? 'selected' : '' %>>Helper2</option>
+                <option value="Helper3" <%= service.assignedHelper === 'Helper3' ? 'selected' : '' %>>Helper3</option>
+              </select>
+            <% } %>
+            <div class="invalid-feedback">Assigned helper is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="assignedTechnician" class="form-label">Assigned Technician *</label>
+            <% if (service.isLocked) { %>
+              <select class="form-select" id="assignedTechnician" name="assignedTechnician" disabled>
+                <option value="">Select technician</option>
+                <option value="Technician1" <%= service.assignedTechnician === 'Technician1' ? 'selected' : '' %>>Technician1</option>
+                <option value="Technician2" <%= service.assignedTechnician === 'Technician2' ? 'selected' : '' %>>Technician2</option>
+                <option value="Technician3" <%= service.assignedTechnician === 'Technician3' ? 'selected' : '' %>>Technician3</option>
+              </select>
+            <% } else { %>
+              <select class="form-select" id="assignedTechnician" name="assignedTechnician" required>
+                <option value="">Select technician</option>
+                <option value="Technician1" <%= service.assignedTechnician === 'Technician1' ? 'selected' : '' %>>Technician1</option>
+                <option value="Technician2" <%= service.assignedTechnician === 'Technician2' ? 'selected' : '' %>>Technician2</option>
+                <option value="Technician3" <%= service.assignedTechnician === 'Technician3' ? 'selected' : '' %>>Technician3</option>
+              </select>
+            <% } %>
+            <div class="invalid-feedback">Assigned technician is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="typeOfWork" class="form-label">Type of Work *</label>
+            <% if (service.isLocked) { %>
+              <select class="form-select" id="typeOfWork" name="typeOfWork" disabled>
+                <option value="">Select work type</option>
+                <option value="Maintenance" <%= service.typeOfWork === 'Maintenance' ? 'selected' : '' %>>Maintenance</option>
+                <option value="Repair" <%= service.typeOfWork === 'Repair' ? 'selected' : '' %>>Repair</option>
+                <option value="Inspection" <%= service.typeOfWork === 'Inspection' ? 'selected' : '' %>>Inspection</option>
+                <option value="Cleaning" <%= service.typeOfWork === 'Cleaning' ? 'selected' : '' %>>Cleaning</option>
+              </select>
+            <% } else { %>
+              <select class="form-select" id="typeOfWork" name="typeOfWork" required>
+                <option value="">Select work type</option>
+                <option value="Maintenance" <%= service.typeOfWork === 'Maintenance' ? 'selected' : '' %>>Maintenance</option>
+                <option value="Repair" <%= service.typeOfWork === 'Repair' ? 'selected' : '' %>>Repair</option>
+                <option value="Inspection" <%= service.typeOfWork === 'Inspection' ? 'selected' : '' %>>Inspection</option>
+                <option value="Cleaning" <%= service.typeOfWork === 'Cleaning' ? 'selected' : '' %>>Cleaning</option>
+              </select>
+            <% } %>
+            <div class="invalid-feedback">Type of work is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="estimatedTime" class="form-label">Estimated Completion Time (HH:MM:SS) *</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="estimatedTime" name="estimatedTime" 
+                     pattern="^([0-9]{1,2}):([0-5][0-9]):([0-5][0-9])$" placeholder="02:30:00" required
+                     value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : '' %>" 
+                     <%= service.isLocked ? 'readonly' : '' %> />
+              <button type="button" class="btn btn-outline-secondary" id="fillEstimatedTimeBtn">
+                <i class="bi bi-clock"></i> Set Default
+              </button>
+            </div>
+            <div class="form-text">Enter time in HH:MM:SS format (e.g., 02:30:00 for 2 hours 30 minutes)</div>
+            <div class="invalid-feedback">Estimated completion time is required.</div>
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="billing" name="billing" <%= service.billing ? 'checked' : '' %> <%= service.isLocked ? 'disabled' : '' %> />
+            <label class="form-check-label" for="billing">Billing Required</label>
+          </div>
+
+          <div class="mb-3 form-check">
+            <% if (service.isLocked) { %>
+              <input type="checkbox" class="form-check-input" id="workDone" name="workDone" <%= service.workDone ? 'checked' : '' %> disabled />
+            <% } else { %>
+              <input type="checkbox" class="form-check-input" id="workDone" name="workDone" <%= service.workDone ? 'checked' : '' %> />
+            <% } %>
+            <label class="form-check-label" for="workDone" style="cursor: pointer;">
+              Work Done
+            </label>
+            <input type="hidden" id="workDoneTime" name="workDoneTime" value="<%= service.workDoneTime ? moment(service.workDoneTime).toISOString() : '' %>" />
+          </div>
+
+          <!-- Bay Number input removed as bay feature is removed -->
+        </div>
+          </div>
+
+          <input type="hidden" name="status" value="<%= service.status %>" />
+
+          <% if (!service.isLocked) { %>
+            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Complete Service Setup
+              </button>
+              <a href="/floor-manager/services" class="btn btn-secondary btn-lg">Cancel</a>
+            </div>
+          <% } else { %>
+            <div class="alert alert-info mt-4">
+              <i class="bi bi-lock"></i> This service has been completed and is locked for editing.
+            </div>
+            <div class="mt-4">
+              <a href="/floor-manager/services" class="btn btn-secondary btn-lg">Back to Services</a>
+            </div>
+          <% } %>
+        </form>
+      </div>
+
+  <script>
+    // Set default estimated time (2 hours)
+    document.getElementById('fillEstimatedTimeBtn').addEventListener('click', () => {
+      document.getElementById('estimatedTime').value = '02:00:00';
+    });
+
+    // Capture current time for Vehicle Attended
+    document.getElementById('captureVehicleAttendedTimeBtn').addEventListener('click', () => {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-GB', { hour12: false });
+      const vehicleAttendedInput = document.getElementById('vehicleAttended');
+      vehicleAttendedInput.value = timeString;
+      vehicleAttendedInput.dispatchEvent(new Event('input'));
+    });
+
+    // Capture current time for Work Started At
+    document.getElementById('captureWorkStartedAtBtn').addEventListener('click', () => {
+      const now = new Date();
+      // Format date to 'YYYY-MM-DDTHH:mm:ss' to match input format
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      const workStartedAtInput = document.getElementById('workStartedAt');
+      workStartedAtInput.value = formattedDate;
+      workStartedAtInput.dispatchEvent(new Event('input'));
+    });
+
+    // Capture current time for Work Done Time and check checkbox
+    // Removed separate capture button, now capture time on checkbox change
+    document.getElementById('workDone').addEventListener('change', (event) => {
+      const workDoneTimeInput = document.getElementById('workDoneTime');
+      if (event.target.checked) {
+        const now = new Date();
+        const isoString = now.toISOString().slice(0, 19);
+        workDoneTimeInput.value = isoString;
+        workDoneTimeInput.dispatchEvent(new Event('input'));
+      } else {
+        workDoneTimeInput.value = '';
+        workDoneTimeInput.dispatchEvent(new Event('input'));
+      }
+    });
+
+    // Bootstrap form validation
+    (function () {
+      'use strict';
+      const form = document.getElementById('serviceForm');
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    })();
+
+    // Progress bar update logic
+    (function () {
+      const form = document.getElementById('serviceForm');
+      const progressBar = document.getElementById('serviceProgressBar');
+      const requiredFields = form.querySelectorAll('select[required], input[required]');
+      const additionalFields = [
+        document.getElementById('vehicleAttended'),
+        document.getElementById('workStartedAt'),
+        document.getElementById('workDone')
+      ];
+      const totalFields = requiredFields.length + additionalFields.length;
+
+      function updateProgressBar() {
+        let filledCount = 0;
+        requiredFields.forEach(field => {
+          if (field.type === 'select-one' && field.value) {
+            filledCount++;
+          } else if ((field.type === 'text' || field.type === 'checkbox') && (field.type === 'checkbox' ? field.checked : field.value.trim() !== '')) {
+            filledCount++;
+          }
+        });
+        additionalFields.forEach(field => {
+          if (!field) return;
+          if (field.type === 'checkbox' && field.checked) {
+            filledCount++;
+          } else if (field.type === 'text' && field.value.trim() !== '') {
+            filledCount++;
+          }
+        });
+        const percent = Math.round((filledCount / totalFields) * 100);
+        progressBar.style.width = percent + '%';
+        progressBar.setAttribute('aria-valuenow', percent);
+        progressBar.textContent = percent + '%';
+      }
+
+      requiredFields.forEach(field => {
+        field.addEventListener('change', updateProgressBar);
+        field.addEventListener('input', updateProgressBar);
+      });
+      additionalFields.forEach(field => {
+        if (!field) return;
+        field.addEventListener('change', updateProgressBar);
+        field.addEventListener('input', updateProgressBar);
+      });
+
+      // Initialize progress bar on page load
+      updateProgressBar();
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

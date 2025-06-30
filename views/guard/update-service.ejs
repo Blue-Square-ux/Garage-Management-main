@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Update Services - Guard Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/guard/dashboard">Guard Dashboard</a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="/logout">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h2>Uncompleted Services - Guard Panel</h2>
+    <% if (services && services.length > 0) { %>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Vehicle Number</th>
+            <th>Gate In Date & Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% services.forEach(service => { %>
+            <tr>
+              <td><%= service.vehicleNumber %></td>
+              <td><%= service.gateInDateTime ? service.gateInDateTime.toLocaleString() : 'N/A' %></td>
+              <td><%= service.status %></td>
+              <td>
+                <a href="/guard/edit-service/<%= service._id %>" class="btn btn-sm btn-primary">Edit</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p>No uncompleted services found.</p>
+    <% } %>
+    <a href="/guard/dashboard" class="btn btn-secondary mt-3">Back to Dashboard</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

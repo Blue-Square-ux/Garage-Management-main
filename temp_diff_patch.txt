@@ -1,0 +1,8 @@
+<button type="button" class="btn btn-outline-secondary" id="captureWorkStartedAtBtn" <%= service.isLocked ? 'disabled' : '' %>>
+                Capture Current Time
+              </button>
+=======
+              <input type="text" class="form-control" id="workStartedAt" name="workStartedAt" value="<%= service.workStartedAt ? moment(service.workStartedAt).format('YYYY-MM-DD HH:mm:ss') : '' %>" <%= service.isLocked ? 'readonly' : 'required' %> />
+              <button type="button" class="btn btn-outline-secondary" id="captureWorkStartedAtBtn" <%= service.isLocked ? 'disabled' : '' %>>
+                Capture Current Time
+              </button>

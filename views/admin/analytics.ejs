@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Analytics - Garage Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Admin Analytics</h1>
+        <a href="/admin/dashboard" class="btn btn-primary mb-4">Back to Dashboard</a>
+
+        <!-- Moved Manage Vehicle/Service Records Section -->
+        <div>
+            <h3>Manage Vehicle/Service Records</h3>
+            <table class="table table-bordered" id="servicesTable">
+                <thead>
+                    <tr>
+                        <th>Vehicle Number</th>
+                        <th>Gate In DateTime</th>
+                        <th>Client Approval Method</th>
+                        <th>Client Approved</th>
+                        <th>Assigned Helper</th>
+                        <th>Assigned Technician</th>
+                        <th>Type Of Work</th>
+                        <th>Estimated Completion Time</th>
+                        <th>Status</th>
+                        <th>Billing</th>
+                        <th>Gate Pass Day</th>
+                        <th>Gate Pass Time</th>
+                        <th>Gate Pass Type</th>
+                        <th>Gate Passer Name</th>
+                        <th>Signed By</th>
+                        <th>Is Locked</th>
+                        <th>Vehicle Attended By</th>
+                        <th>Vehicle Attended</th>
+                        <th>Work Started At</th>
+                        <th>Work Done</th>
+                        <th>Work Done Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Services will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+            <script>
+                async function loadServices() {
+                    const response = await fetch('/admin/services');
+                    const services = await response.json();
+                    const tbody = document.querySelector('#servicesTable tbody');
+                    tbody.innerHTML = '';
+                    services.forEach(service => {
+                        const gateInDateTime = service.gateInDateTime ? new Date(service.gateInDateTime).toLocaleString() : '';
+                        const estimatedTime = service.estimatedCompletionTime ? new Date(service.estimatedCompletionTime).toLocaleString() : '';
+                        const gatePassDay = service.gatePassDay ? new Date(service.gatePassDay).toLocaleDateString() : '';
+                        const workStartedAt = service.workStartedAt ? new Date(service.workStartedAt).toLocaleString() : '';
+                        const workDoneTime = service.workDoneTime ? new Date(service.workDoneTime).toLocaleString() : '';
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${service.vehicleNumber}</td>
+                            <td>${gateInDateTime}</td>
+                            <td>${service.clientApprovalMethod || ''}</td>
+                            <td>${service.clientApproved ? 'Yes' : 'No'}</td>
+                            <td>${service.assignedHelper || ''}</td>
+                            <td>${service.assignedTechnician || ''}</td>
+                            <td>${service.typeOfWork || ''}</td>
+                            <td>${estimatedTime}</td>
+                            <td>${service.status}</td>
+                            <td>${service.billing ? 'Yes' : 'No'}</td>
+                            <td>${gatePassDay}</td>
+                            <td>${service.gatePassTime || ''}</td>
+                            <td>${service.gatePassType || ''}</td>
+                            <td>${service.gatePasserName || ''}</td>
+                            <td>${service.signedBy || ''}</td>
+                            <td>${service.isLocked ? 'Yes' : 'No'}</td>
+                            <td>${service.vehicleAttendedBy || ''}</td>
+                            <td>${service.vehicleAttended || ''}</td>
+                            <td>${workStartedAt}</td>
+                            <td>${service.workDone ? 'Yes' : 'No'}</td>
+                            <td>${workDoneTime}</td>
+                            <td>
+                        <button class="btn btn-sm btn-warning" onclick="editService('${service._id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteService('${service._id}')">Delete</button>
+                        ${service.isLocked ? `<button class="btn btn-sm btn-info" onclick="unlockService('${service._id}')">Unlock</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function editService(id) {
+            window.location.href = `/floor-manager/edit-service/${id}`;
+        }
+
+        async function deleteService(id) {
+            if (confirm('Are you sure you want to delete this service?')) {
+                const response = await fetch(`/admin/services/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Service deleted successfully');
+                    loadServices();
+                } else {
+                    alert('Failed to delete service');
+                }
+            }
+        }
+
+        async function unlockService(id) {
+            const response = await fetch(`/admin/services/${id}/unlock`, { method: 'POST' });
+            if (response.ok) {
+                alert('Service unlocked successfully');
+                loadServices();
+            } else {
+                alert('Failed to unlock service');
+            }
+        }
+
+        // Load services automatically on page load
+        document.addEventListener('DOMContentLoaded', loadServices);
+    </script>
+</body>
+</html>

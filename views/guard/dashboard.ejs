@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guard Dashboard - Garage Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            padding: 2rem;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .action-button {
+            flex: 1;
+            padding: 2rem;
+            text-align: center;
+            font-size: 1.25rem;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            text-decoration: none;
+            color: #212529;
+            transition: all 0.3s ease;
+        }
+        .action-button:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/guard/dashboard">Guard Dashboard</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+        <h2 class="mb-4">Guard Dashboard</h2>
+        
+        <div class="action-buttons">
+            <a href="/guard/new-service" class="action-button">
+                <div class="mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                </div>
+                New
+            </a>
+        </div>
+
+        <% if (services && services.length > 0) { %>
+            <h3 class="mt-5">Service Records</h3>
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Vehicle Number</th>
+                        <th>Status</th>
+                        <th>Gate In Date & Time</th>
+                        <th>Estimated Completion</th>
+                        <th>Completed At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% services.forEach(service => { %>
+                        <tr>
+                            <td><%= service.vehicleNumber %></td>
+                            <td><%= service.status %></td>
+                            <td><%= new Date(service.gateInDateTime).toLocaleString() %></td>
+                            <td><%= service.estimatedCompletionTime ? new Date(service.estimatedCompletionTime).toLocaleString() : 'N/A' %></td>
+                            <td><%= service.status === 'completed' && service.updatedAt ? new Date(service.updatedAt).toLocaleString() : 'N/A' %></td>
+                            <td>
+                                <% if (service.clientApprovalMethod && service.assignedTechnician && service.estimatedCompletionTime && !service.isLocked && service.status !== 'completed') { %>
+                                    <a href="/guard/update-service/<%= service._id %>" class="btn btn-primary btn-sm">Edit</a>
+                                <% } else { %>
+                                    <span class="text-muted" title="Cannot edit: Waiting for Floor Manager to complete service setup or service is locked/completed.">N/A</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p class="mt-5">No service records to display.</p>
+        <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
