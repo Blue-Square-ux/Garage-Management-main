@@ -23,6 +23,10 @@ const serviceSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid approval method`
     }
   },
+  clientApprovalTime: {
+    type: Date,
+    default: null
+  },
   clientApproved: {
     type: Boolean,
     default: false

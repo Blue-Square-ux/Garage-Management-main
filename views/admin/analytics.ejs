@@ -20,6 +20,7 @@
                         <th>Vehicle Number</th>
                         <th>Gate In DateTime</th>
                         <th>Client Approval Method</th>
+                        <th>Client Approval Time</th>
                         <th>Client Approved</th>
                         <th>Assigned Helper</th>
                         <th>Assigned Technician</th>
@@ -56,6 +57,7 @@
                     tbody.innerHTML = '';
                     services.forEach(service => {
                         const gateInDateTime = service.gateInDateTime ? new Date(service.gateInDateTime).toLocaleString() : '';
+                        const clientApprovalTime = service.clientApprovalTime ? new Date(service.clientApprovalTime).toLocaleString() : '';
                         const estimatedTime = service.estimatedCompletionTime ? new Date(service.estimatedCompletionTime).toLocaleString() : '';
                         const gatePassDay = service.gatePassDay ? new Date(service.gatePassDay).toLocaleDateString() : '';
                         const workStartedAt = service.workStartedAt ? new Date(service.workStartedAt).toLocaleString() : '';
@@ -65,6 +67,7 @@
                             <td>${service.vehicleNumber}</td>
                             <td>${gateInDateTime}</td>
                             <td>${service.clientApprovalMethod || ''}</td>
+                            <td>${clientApprovalTime}</td>
                             <td>${service.clientApproved ? 'Yes' : 'No'}</td>
                             <td>${service.assignedHelper || ''}</td>
                             <td>${service.assignedTechnician || ''}</td>

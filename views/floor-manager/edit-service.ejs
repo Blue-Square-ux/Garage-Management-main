@@ -129,7 +129,7 @@
             </div>
 
             <!-- Step 2: Client Approval -->
-            <div class="tab-pane fade" id="step2" role="tabpanel">
+  <div class="tab-pane fade" id="step2" role="tabpanel">
   <div class="mb-3">
     <label class="form-label">Client Approval Method *</label>
     <% if (service.isLocked) { %>
@@ -146,6 +146,7 @@
         <option value="WhatsApp">WhatsApp</option>
         <option value="Call">Call</option>
       </select>
+      <input type="hidden" id="clientApprovalTime" name="clientApprovalTime" value="<%= service.clientApprovalTime ? service.clientApprovalTime.toISOString() : '' %>" />
     <% } %>
   </div>
   <div class="d-flex justify-content-between">
@@ -153,6 +154,17 @@
     <button type="button" class="btn btn-primary next-step">Next</button>
   </div>
 </div>
+
+<script>
+  document.getElementById('clientApprovalMethod')?.addEventListener('change', function() {
+    const clientApprovalTimeInput = document.getElementById('clientApprovalTime');
+    if (this.value) {
+      clientApprovalTimeInput.value = new Date().toISOString();
+    } else {
+      clientApprovalTimeInput.value = '';
+    }
+  });
+</script>
 
             <!-- Step 3: Assignment -->
             <div class="tab-pane fade" id="step3" role="tabpanel">

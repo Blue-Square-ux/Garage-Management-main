@@ -113,6 +113,7 @@ const floorManagerController = {
 
       const {
         clientApprovalMethod,
+        clientApprovalTime,
         assignedHelper,
         assignedTechnician,
         typeOfWork,
@@ -179,6 +180,18 @@ const floorManagerController = {
       if (clientApprovalMethod !== undefined) {
         console.log('Updating clientApprovalMethod:', clientApprovalMethod);
         service.clientApprovalMethod = clientApprovalMethod || null;
+
+        // Set clientApprovalTime if method is set and time not already set
+        if (clientApprovalMethod && (!service.clientApprovalTime || service.clientApprovalTime === null)) {
+          service.clientApprovalTime = new Date();
+          console.log('Setting clientApprovalTime to current time');
+        }
+
+        // Clear clientApprovalTime if method is cleared
+        if (!clientApprovalMethod) {
+          service.clientApprovalTime = null;
+          console.log('Clearing clientApprovalTime because clientApprovalMethod is cleared');
+        }
       }
       if (assignedHelper !== undefined) {
         console.log('Updating assignedHelper:', assignedHelper);
@@ -241,6 +254,7 @@ const floorManagerController = {
       }
 
       console.log('Service before save:', service);
+      console.log('clientApprovalTime value before save:', service.clientApprovalTime);
       await service.save();
       console.log('Service after save:', service);
       console.log('Service updated successfully');
