@@ -15,33 +15,33 @@
         <div>
             <h3>Manage Vehicle/Service Records</h3>
             <table class="table table-bordered" id="servicesTable">
-                <thead>
-                    <tr>
-                        <th>Vehicle Number</th>
-                        <th>Gate In DateTime</th>
-                        <th>Client Approval Method</th>
-                        <th>Client Approval Time</th>
-                        <th>Client Approved</th>
-                        <th>Assigned Helper</th>
-                        <th>Assigned Technician</th>
-                        <th>Type Of Work</th>
-                        <th>Estimated Completion Time</th>
-                        <th>Status</th>
-                        <th>Billing</th>
-                        <th>Gate Pass Day</th>
-                        <th>Gate Pass Time</th>
-                        <th>Gate Pass Type</th>
-                        <th>Gate Passer Name</th>
-                        <th>Signed By</th>
-                        <th>Is Locked</th>
-                        <th>Vehicle Attended By</th>
-                        <th>Vehicle Attended</th>
-                        <th>Work Started At</th>
-                        <th>Work Done</th>
-                        <th>Work Done Time</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+            <thead>
+                <tr>
+                    <th class="text-center">Vehicle Number</th>
+                    <th class="text-center">Gate In DateTime</th>
+                    <th class="text-center">Client Approval Method</th>
+                    <th class="text-center">Client Approval Time</th>
+                    <th class="text-center">Client Approved</th>
+                    <th class="text-center">Assigned Helper</th>
+                    <th class="text-center">Assigned Technician</th>
+                    <th class="text-center">Type Of Work</th>
+                    <th class="text-center">Estimated Completion Time</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Billing</th>
+                    <th class="text-center">Gate Pass Day</th>
+                    <th class="text-center">Gate Pass Time</th>
+                    <th class="text-center">Gate Pass Type</th>
+                    <th class="text-center">Gate Passer Name</th>
+                    <th class="text-center">Signed By</th>
+                    <th class="text-center">Is Locked</th>
+                    <th class="text-center">Vehicle Attended By</th>
+                    <th class="text-center">Vehicle Attended</th>
+                    <th class="text-center">Work Started At</th>
+                    <th class="text-center">Work Done</th>
+                    <th class="text-center">Work Done Time</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
                 <tbody>
                     <!-- Services will be loaded here -->
                 </tbody>
@@ -86,7 +86,7 @@
                             <td>${workStartedAt}</td>
                             <td>${service.workDone ? 'Yes' : 'No'}</td>
                             <td>${workDoneTime}</td>
-                            <td>
+                            <td class="text-center d-flex justify-content-center gap-1">
                         <button class="btn btn-sm btn-warning" onclick="editService('${service._id}')">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteService('${service._id}')">Delete</button>
                         ${service.isLocked ? `<button class="btn btn-sm btn-info" onclick="unlockService('${service._id}')">Unlock</button>` : ''}

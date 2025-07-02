@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Service - Floor Manager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    .form-container { max-width: 800px; margin: 0 auto; }
+    .step-content { min-height: 300px; }
+    .nav-pills .nav-link { margin-right: 5px; }
+    @media (max-width: 768px) {
+      .nav-pills { overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; }
+      .nav-item { display: inline-block; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/floor-manager/dashboard">Floor Manager Dashboard</a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="/logout">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4 form-container">
+    <h2>Service Details - Floor Manager Panel</h2>
+
+    <!-- Step Block Progress Bar -->
+    <div class="d-flex justify-content-between mb-4" id="stepProgressBar" style="user-select:none;">
+      <div class="step-block completed" data-step="1">T1: Vehicle</div>
+      <div class="step-block" data-step="2">T2: Approval</div>
+      <div class="step-block" data-step="3">T3: Assignment</div>
+      <div class="step-block" data-step="4">T4: Work Start</div>
+      <div class="step-block" data-step="5">T5: Billing</div>
+      <div class="step-block" data-step="6">T6: Completion</div>
+    </div>
+
+    <style>
+      #stepProgressBar {
+        display: flex;
+        gap: 10px;
+      }
+      .step-block {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-weight: 600;
+        color: #666;
+        background-color: transparent;
+        transition: background-color 0.3s, color 0.3s;
+        cursor: default;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .step-block.completed {
+        background-color: #198754; /* Bootstrap green */
+        color: white;
+        border-color: #198754;
+      }
+      .step-block.current {
+        background-color: #ffc107; /* Bootstrap yellow */
+        color: black;
+        border-color: #ffc107;
+      }
+      .step-block.incomplete {
+        background-color: #dc3545; /* Bootstrap red */
+        color: white;
+        border-color: #dc3545;
+      }
+    </style>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <!-- Guard Information -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5><i class="bi bi-info-circle"></i> Guard Entry Information (Read-Only)</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label"><strong>Vehicle Number Plate:</strong></label>
+            <p class="form-control-plaintext border rounded p-2 bg-light"><%= service.vehicleNumber %></p>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><strong>Gate-In Date & Time:</strong></label>
+            <p class="form-control-plaintext border rounded p-2 bg-light"><%= moment(service.gateInDateTime).format('DD/MM/YYYY HH:mm') %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-Step Form -->
+    <form id="serviceForm" action="/floor-manager/services/edit/<%= service._id %>" method="POST" novalidate>
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="bi bi-gear"></i> Service Configuration</h5>
+        </div>
+        <div class="card-body">
+          <!-- Step Indicators -->
+          <ul class="nav nav-pills mb-4" id="serviceStepsTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="step1-tab" data-bs-toggle="pill" data-bs-target="#step1" type="button">
+                T1: Vehicle
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="step2-tab" data-bs-toggle="pill" data-bs-target="#step2" type="button">
+                T2: Approval
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="step3-tab" data-bs-toggle="pill" data-bs-target="#step3" type="button">
+                T3: Assignment
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="step4-tab" data-bs-toggle="pill" data-bs-target="#step4" type="button">
+                T4: Work Start
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="step5-tab" data-bs-toggle="pill" data-bs-target="#step5" type="button">
+                T5: Billing
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="step6-tab" data-bs-toggle="pill" data-bs-target="#step6" type="button">
+                T6: Completion
+              </button>
+            </li>
+          </ul>
+
+          <!-- Step Content -->
+          <div class="tab-content step-content" id="serviceStepsContent">
+            <!-- Step 1: Vehicle Attended -->
+            <div class="tab-pane fade show active" id="step1" role="tabpanel">
+              <div class="mb-3">
+                <label class="form-label">Vehicle Attended *</label>
+                <div class="input-group">
+                  <% if (service.isLocked) { %>
+                    <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" 
+                           value="<%= service.vehicleAttendedBy || '' %>" readonly />
+                    <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" 
+                           value="<%= service.vehicleAttended || '' %>" readonly />
+                    <button type="button" class="btn btn-outline-secondary" disabled>Capture Time</button>
+                  <% } else { %>
+                    <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" 
+                           value="<%= service.vehicleAttendedBy || '' %>" required placeholder="Attendant name" />
+                    <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" 
+                           value="<%= service.vehicleAttended || '' %>" required placeholder="Time attended" />
+                    <button type="button" class="btn btn-outline-secondary" id="captureVehicleAttendedTimeBtn">
+                      Capture Time
+                    </button>
+                  <% } %>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right"></i></button>
+              </div>
+            </div>
+
+            <!-- Step 2: Client Approval -->
+  <div class="tab-pane fade" id="step2" role="tabpanel">
+  <div class="mb-3">
+    <label class="form-label">Client Approval Method *</label>
+    <% if (service.isLocked) { %>
+      <div class="d-flex align-items-center">
+        <span class="me-2"><%= service.clientApprovalMethod %></span>
+        <small class="text-muted">
+          (<%= moment(service.clientApprovalTime).format('DD/MM/YYYY HH:mm') %>)
+        </small>
+      </div>
+    <% } else { %>
+      <select class="form-select" id="clientApprovalMethod" name="clientApprovalMethod" required>
+        <option value="" disabled selected>Select method</option>
+        <option value="SMS">SMS</option>
+        <option value="WhatsApp">WhatsApp</option>
+        <option value="Call">Call</option>
+      </select>
+      <input type="hidden" id="clientApprovalTime" name="clientApprovalTime" value="<%= service.clientApprovalTime ? service.clientApprovalTime.toISOString() : '' %>" />
+    <% } %>
+  </div>
+  <div class="d-flex justify-content-between">
+    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+    <button type="button" class="btn btn-primary next-step">Next</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById('clientApprovalMethod')?.addEventListener('change', function() {
+    const clientApprovalTimeInput = document.getElementById('clientApprovalTime');
+    if (this.value) {
+      clientApprovalTimeInput.value = new Date().toISOString();
+    } else {
+      clientApprovalTimeInput.value = '';
+    }
+  });
+</script>
+
+            <!-- Step 3: Assignment -->
+            <div class="tab-pane fade" id="step3" role="tabpanel">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Assigned Helper *</label>
+                  <% if (service.isLocked) { %>
+                    <input type="text" class="form-control" value="<%= service.assignedHelper || 'Not set' %>" readonly />
+                  <% } else { %>
+                    <select class="form-select" id="assignedHelper" name="assignedHelper" required>
+                      <option value="">Select helper</option>
+                      <option value="Helper1" <%= service.assignedHelper === 'Helper1' ? 'selected' : '' %>>Helper1</option>
+                      <option value="Helper2" <%= service.assignedHelper === 'Helper2' ? 'selected' : '' %>>Helper2</option>
+                      <option value="Helper3" <%= service.assignedHelper === 'Helper3' ? 'selected' : '' %>>Helper3</option>
+                    </select>
+                  <% } %>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Assigned Technician *</label>
+                  <% if (service.isLocked) { %>
+                    <input type="text" class="form-control" value="<%= service.assignedTechnician || 'Not set' %>" readonly />
+                  <% } else { %>
+                    <select class="form-select" id="assignedTechnician" name="assignedTechnician" required>
+                      <option value="">Select technician</option>
+                      <option value="Technician1" <%= service.assignedTechnician === 'Technician1' ? 'selected' : '' %>>Technician1</option>
+                      <option value="Technician2" <%= service.assignedTechnician === 'Technician2' ? 'selected' : '' %>>Technician2</option>
+                      <option value="Technician3" <%= service.assignedTechnician === 'Technician3' ? 'selected' : '' %>>Technician3</option>
+                    </select>
+                  <% } %>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Type of Work *</label>
+                  <% if (service.isLocked) { %>
+                    <input type="text" class="form-control" value="<%= service.typeOfWork || 'Not set' %>" readonly />
+                  <% } else { %>
+                    <select class="form-select" id="typeOfWork" name="typeOfWork" required>
+                      <option value="">Select work type</option>
+                      <option value="Maintenance" <%= service.typeOfWork === 'Maintenance' ? 'selected' : '' %>>Maintenance</option>
+                      <option value="Repair" <%= service.typeOfWork === 'Repair' ? 'selected' : '' %>>Repair</option>
+                      <option value="Inspection" <%= service.typeOfWork === 'Inspection' ? 'selected' : '' %>>Inspection</option>
+                      <option value="Cleaning" <%= service.typeOfWork === 'Cleaning' ? 'selected' : '' %>>Cleaning</option>
+                    </select>
+                  <% } %>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Estimated Time *</label>
+                  <div class="input-group">
+                    <% if (service.isLocked) { %>
+                      <input type="text" class="form-control" 
+                             value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : 'Not set' %>" 
+                             readonly />
+                    <% } else { %>
+                      <input type="text" class="form-control" id="estimatedTime" name="estimatedTime" 
+                             pattern="^([0-9]{1,2}):([0-5][0-9]):([0-5][0-9])$" 
+                             value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : '' %>" 
+                             required />
+                      <button type="button" class="btn btn-outline-secondary" id="fillEstimatedTimeBtn">
+                        <i class="bi bi-clock"></i> Default
+                      </button>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
+                <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right"></i></button>
+              </div>
+            </div>
