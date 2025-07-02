@@ -2,213 +2,138 @@ const Service = require('../models/Service');
 const moment = require('moment');
 
 const adminController = {
+  // Render dashboard
   dashboard: async (req, res) => {
     try {
-      const totalServices = await Service.countDocuments();
-      const completedServices = await Service.countDocuments({ status: 'completed' });
-      const inProgressServices = await Service.countDocuments({ status: 'in-progress' });
-      const pendingServices = await Service.countDocuments({ status: 'pending' });
-      const services = await Service.find({}).sort({ createdAt: -1 }).limit(5);
+      // Get all services for today (not just completed ones)
+      const today = moment().startOf('day');
+      const tomorrow = moment().add(1, 'day').startOf('day');
+      
+      const services = await Service.find({
+        gateInDateTime: {
+          $gte: today.toDate(),
+          $lt: tomorrow.toDate()
+        }
+      }).sort({ gateInDateTime: -1 });
 
+      // Calculate status counts based on the new logic
+      let pendingServices = 0;
+      let inProgressServices = 0;
+      let completedServices = 0;
+
+      services.forEach(service => {
+        if (service.status === 'completed') {
+          completedServices++;
+        } else {
+          // Check if T1 and T2 are completed
+          const t1Completed = service.vehicleAttendedBy && service.vehicleAttended;
+          const t2Completed = service.clientApprovalMethod;
+          
+          if (t1Completed && t2Completed) {
+            inProgressServices++;
+          } else {
+            pendingServices++;
+          }
+        }
+      });
+
+      console.log('Dashboard services:', services.length);
+      console.log('Status counts - Pending:', pendingServices, 'In Progress:', inProgressServices, 'Completed:', completedServices);
+      
       res.render('admin/dashboard', {
-        user: req.session.user,
-        totalServices,
-        completedServices,
-        inProgressServices,
-        pendingServices,
         services,
-        moment
-      });
-    } catch (error) {
-      res.status(500).render('error', { error: 'Error loading admin dashboard' });
-    }
-  },
-
-  exportServicesCSV: async (req, res) => {
-    try {
-      const services = await Service.find();
-
-      // Convert services to CSV format
-      const header = ['Vehicle Number', 'Status', 'Is Locked', 'Created At', 'Updated At'];
-      const rows = services.map(service => [
-        service.vehicleNumber,
-        service.status,
-        service.isLocked ? 'Yes' : 'No',
-        service.createdAt ? service.createdAt.toISOString() : '',
-        service.updatedAt ? service.updatedAt.toISOString() : ''
-      ]);
-
-      const csvContent = [
-        header.join(','),
-        ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-      ].join('\n');
-
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename="services.csv"');
-      res.status(200).send(csvContent);
-    } catch (error) {
-      res.status(500).json({ error: 'Error exporting services as CSV' });
-    }
-  },
-
-  getNotifications: async (req, res) => {
-    try {
-      const now = moment();
-      const delayedServices = await Service.find({
-        status: { $ne: 'completed' },
-        estimatedCompletionTime: { $lte: now.toDate() }
-      });
-
-      res.json(delayedServices);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching notifications' });
-    }
-  },
-
-  getDelayedServices: async (req, res) => {
-    try {
-      const now = moment();
-      const delayedServices = await Service.find({
-        status: { $ne: 'completed' },
-        estimatedCompletionTime: { $lte: now.toDate() }
-      });
-
-      res.render('admin/delayed-services', {
-        delayedServices,
+        pendingServices,
+        inProgressServices,
+        completedServices,
         moment,
         user: req.session.user
       });
     } catch (error) {
-      res.status(500).render('error', { error: 'Error loading delayed services' });
+      console.error('Error loading dashboard:', error);
+      res.status(500).render('error', { error: 'Error loading dashboard' });
     }
   },
 
-  getAnalytics: async (req, res) => {
+  // Analytics page
+  analytics: async (req, res) => {
     try {
-      // Placeholder for analytics page
+      // Get analytics data for the past week
+      const weekAgo = moment().subtract(7, 'days').startOf('day');
+      
+      const services = await Service.find({
+        gateInDateTime: {
+          $gte: weekAgo.toDate()
+        }
+      }).sort({ gateInDateTime: -1 });
+
+      // Calculate various metrics
+      const totalServices = services.length;
+      const completedServices = services.filter(s => s.status === 'completed').length;
+      const averageCompletionTime = services
+        .filter(s => s.workStartedAt && s.workDoneTime)
+        .reduce((acc, s) => {
+          const duration = moment(s.workDoneTime).diff(moment(s.workStartedAt), 'minutes');
+          return acc + duration;
+        }, 0) / services.filter(s => s.workStartedAt && s.workDoneTime).length || 0;
+
       res.render('admin/analytics', {
-        user: req.session.user
-      });
-    } catch (error) {
-      res.status(500).render('error', { error: 'Error loading analytics' });
-    }
-  },
-
-  getAnalyticsData: async (req, res) => {
-    try {
-      // Example analytics data: count of services by status
-      const totalServices = await Service.countDocuments();
-      const completedServices = await Service.countDocuments({ status: 'completed' });
-      const inProgressServices = await Service.countDocuments({ status: 'in-progress' });
-      const pendingServices = await Service.countDocuments({ status: 'pending' });
-
-      res.json({
+        services,
         totalServices,
         completedServices,
-        inProgressServices,
-        pendingServices
+        averageCompletionTime: Math.round(averageCompletionTime),
+        moment,
+        user: req.session.user
       });
+      getNotifications; async (req, res) => {
+  res.json({ message: 'Notifications data not implemented yet.' });
+},
+
+getAnalyticsData; async (req, res) => {
+  res.json({ message: 'Analytics data not implemented yet.' });
+},
+
+getDelayedServices; async (req, res) => {
+  res.json({ message: 'Delayed services not implemented yet.' });
+},
+
+checkNewNotifications; async (req, res) => {
+  res.json({ message: 'Check notifications endpoint not implemented yet.' });
+},
+
+listServices; async (req, res) => {
+  res.json({ message: 'List of services not implemented yet.' });
+},
+
+exportServicesCSV; async (req, res) => {
+  res.json({ message: 'Export services CSV not implemented yet.' });
+},
+
+getServiceById; async (req, res) => {
+  const { id } = req.params;
+  res.json({ message: `Service with ID ${id} not implemented.` });
+},
+
+createService; async (req, res) => {
+  res.json({ message: 'Create service not implemented yet.' });
+},
+
+updateService; async (req, res) => {
+  const { id } = req.params;
+  res.json({ message: `Update service ${id} not implemented yet.` });
+},
+
+deleteService; async (req, res) => {
+  const { id } = req.params;
+  res.json({ message: `Delete service ${id} not implemented yet.` });
+},
+
+unlockService, async (req, res) => {
+  const { id } = req.params;
+  res.json({ message: `Unlock service ${id} not implemented yet.` });
+}
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching analytics data' });
-    }
-  },
-
-  checkNewNotifications: async (req, res) => {
-    try {
-      const now = moment();
-      const delayedServices = await Service.find({
-        status: { $ne: 'completed' },
-        estimatedCompletionTime: { $lte: now.toDate() }
-      });
-
-      // Filter services that need notification every 5 mins
-      const servicesToNotify = delayedServices.filter(service => {
-        if (!service.notificationsStarted) return false;
-        if (!service.lastNotificationTime) return true;
-        const lastNotified = moment(service.lastNotificationTime);
-        return now.diff(lastNotified, 'minutes') >= 5;
-      });
-
-      // Update lastNotificationTime for notified services
-      for (const service of servicesToNotify) {
-        service.lastNotificationTime = now.toDate();
-        await service.save();
-      }
-
-      res.json(servicesToNotify);
-    } catch (error) {
-      res.status(500).json({ error: 'Error checking notifications' });
-    }
-  },
-
-  // New controller methods for admin CRUD and unlock
-
-  listServices: async (req, res) => {
-    try {
-      const services = await Service.find();
-      res.json(services);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching services' });
-    }
-  },
-
-  getServiceById: async (req, res) => {
-    try {
-      const service = await Service.findById(req.params.id);
-      if (!service) {
-        return res.status(404).json({ error: 'Service not found' });
-      }
-      res.json(service);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching service' });
-    }
-  },
-
-  createService: async (req, res) => {
-    try {
-      const newService = new Service(req.body);
-      await newService.save();
-      res.status(201).json(newService);
-    } catch (error) {
-      res.status(500).json({ error: 'Error creating service' });
-    }
-  },
-
-  updateService: async (req, res) => {
-    try {
-      const updatedService = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!updatedService) {
-        return res.status(404).json({ error: 'Service not found' });
-      }
-      res.json(updatedService);
-    } catch (error) {
-      res.status(500).json({ error: 'Error updating service' });
-    }
-  },
-
-  deleteService: async (req, res) => {
-    try {
-      const deletedService = await Service.findByIdAndDelete(req.params.id);
-      if (!deletedService) {
-        return res.status(404).json({ error: 'Service not found' });
-      }
-      res.json({ message: 'Service deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ error: 'Error deleting service' });
-    }
-  },
-
-  unlockService: async (req, res) => {
-    try {
-      const service = await Service.findById(req.params.id);
-      if (!service) {
-        return res.status(404).json({ error: 'Service not found' });
-      }
-      service.isLocked = false;
-      await service.save();
-      res.json({ message: 'Service unlocked successfully', service });
-    } catch (error) {
-      res.status(500).json({ error: 'Error unlocking service' });
+      console.error('Error loading analytics:', error);
+      res.status(500).render('error', { error: 'Error loading analytics' });
     }
   }
 };

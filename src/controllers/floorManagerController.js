@@ -57,10 +57,6 @@ const floorManagerController = {
         return res.status(404).render('error', { error: 'Service not found' });
       }
 
-      if (service.isLocked) {
-        return res.status(403).render('error', { error: 'Service is locked and cannot be edited' });
-      }
-
       // Ensure vehicleAttendedBy, vehicleAttended, and workStartedAt have default values to avoid rendering errors
       if (!service.vehicleAttendedBy) {
         service.vehicleAttendedBy = '';
@@ -74,14 +70,7 @@ const floorManagerController = {
 
       console.log('Edit Service Form - clientApprovalMethod:', service.clientApprovalMethod);
       console.log('Edit Service Form - billing:', service.billing);
-
-      // Ensure clientApprovalMethod remains unset if not previously set
-      service.clientApprovalMethod = service.clientApprovalMethod || undefined;
-
-      // Set default null for billing if not set
-      if (service.billing === undefined || service.billing === null) {
-        service.billing = null;
-      }
+      console.log('Edit Service Form - isLocked:', service.isLocked);
 
       res.render('floor-manager/edit-service', {
         service,
@@ -117,29 +106,30 @@ const floorManagerController = {
         assignedHelper,
         assignedTechnician,
         typeOfWork,
+        bayNumber,
         estimatedTime,
+        assignmentTime,
         status,
         billing,
         vehicleAttendedBy,
         vehicleAttended,
-        workStartedAt,
         workDone,
         workDoneTime
       } = req.body;
 
-      // Validate required fields (allow empty vehicleAttendedBy, vehicleAttended, workStartedAt)
-      if (!assignedHelper || !assignedTechnician || !typeOfWork) {
+      // Validate required fields
+      if (!assignedHelper || !assignedTechnician || !typeOfWork || !bayNumber) {
         console.error('Validation error: Missing required fields');
         return res.status(400).render('floor-manager/edit-service', {
           service,
           moment,
           user: req.session.user,
-          error: 'Assigned Helper, Assigned Technician, and Type of Work are required.'
+          error: 'Assigned Helper, Assigned Technician, Type of Work, and Bay Number are required.'
         });
       }
 
       // Validate clientApprovalMethod enum
-      const validClientApprovalMethods = ['SMS', 'WhatsApp', 'Call', ''];
+      const validClientApprovalMethods = ['SMS', 'WhatsApp', 'Call'];
       if (clientApprovalMethod && !validClientApprovalMethods.includes(clientApprovalMethod)) {
         console.error('Validation error: Invalid clientApprovalMethod');
         return res.status(400).render('floor-manager/edit-service', {
@@ -177,22 +167,25 @@ const floorManagerController = {
       }
 
       // Update service details
+      if (vehicleAttendedBy !== undefined) {
+        console.log('Updating vehicleAttendedBy:', vehicleAttendedBy);
+        service.vehicleAttendedBy = vehicleAttendedBy || null;
+      }
+      if (vehicleAttended !== undefined) {
+        console.log('Updating vehicleAttended:', vehicleAttended);
+        service.vehicleAttended = vehicleAttended || null;
+      }
+      
       if (clientApprovalMethod !== undefined) {
         console.log('Updating clientApprovalMethod:', clientApprovalMethod);
         service.clientApprovalMethod = clientApprovalMethod || null;
-
-        // Set clientApprovalTime if method is set and time not already set
-        if (clientApprovalMethod && (!service.clientApprovalTime || service.clientApprovalTime === null)) {
-          service.clientApprovalTime = new Date();
-          console.log('Setting clientApprovalTime to current time');
-        }
-
-        // Clear clientApprovalTime if method is cleared
-        if (!clientApprovalMethod) {
-          service.clientApprovalTime = null;
-          console.log('Clearing clientApprovalTime because clientApprovalMethod is cleared');
-        }
       }
+      
+      if (clientApprovalTime) {
+        console.log('Updating clientApprovalTime:', clientApprovalTime);
+        service.clientApprovalTime = new Date(clientApprovalTime);
+      }
+      
       if (assignedHelper !== undefined) {
         console.log('Updating assignedHelper:', assignedHelper);
         service.assignedHelper = assignedHelper;
@@ -205,6 +198,10 @@ const floorManagerController = {
         console.log('Updating typeOfWork:', typeOfWork);
         service.typeOfWork = typeOfWork;
       }
+      if (bayNumber !== undefined) {
+        console.log('Updating bayNumber:', bayNumber);
+        service.bayNumber = bayNumber;
+      }
       if (estimatedTime) {
         console.log('Updating estimatedCompletionTime with estimatedTime:', estimatedTime);
         const [hours, minutes, seconds] = estimatedTime.split(':').map(Number);
@@ -214,6 +211,10 @@ const floorManagerController = {
           .add(seconds, 'seconds')
           .toDate();
       }
+      if (assignmentTime) {
+        console.log('Updating assignmentTime:', assignmentTime);
+        service.assignmentTime = new Date(assignmentTime);
+      }
       if (status !== undefined) {
         console.log('Updating status:', status);
         service.status = status;
@@ -221,18 +222,6 @@ const floorManagerController = {
       if (billing !== undefined) {
         console.log('Updating billing:', billing);
         service.billing = billing === 'true';
-      }
-      if (vehicleAttendedBy !== undefined) {
-        console.log('Updating vehicleAttendedBy:', vehicleAttendedBy);
-        service.vehicleAttendedBy = vehicleAttendedBy || null;
-      }
-      if (vehicleAttended !== undefined) {
-        console.log('Updating vehicleAttended:', vehicleAttended);
-        service.vehicleAttended = vehicleAttended || null;
-      }
-      if (workStartedAt) {
-        console.log('Updating workStartedAt:', workStartedAt);
-        service.workStartedAt = new Date(workStartedAt);
       }
       if (workDone !== undefined) {
         console.log('Updating workDone:', workDone);
@@ -254,7 +243,6 @@ const floorManagerController = {
       }
 
       console.log('Service before save:', service);
-      console.log('clientApprovalTime value before save:', service.clientApprovalTime);
       await service.save();
       console.log('Service after save:', service);
       console.log('Service updated successfully');

@@ -14,14 +14,8 @@ const serviceSchema = new mongoose.Schema({
   },
   clientApprovalMethod: {
     type: String,
-    enum: [ 'SMS', 'WhatsApp', 'Call'],
-    required: true,
-    validate: {
-      validator: function(v) {
-        return ['SMS', 'WhatsApp', 'Call'].includes(v);
-      },
-      message: props => `${props.value} is not a valid approval method`
-    }
+    enum: ['SMS', 'WhatsApp', 'Call'],
+    default: null
   },
   clientApprovalTime: {
     type: Date,
@@ -43,7 +37,15 @@ const serviceSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  bayNumber: {
+    type: String,
+    default: null
+  },
   estimatedCompletionTime: {
+    type: Date,
+    default: null
+  },
+  assignmentTime: {
     type: Date,
     default: null
   },
@@ -124,9 +126,12 @@ const serviceSchema = new mongoose.Schema({
 serviceSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   
-  // Ensure clientApprovalMethod is never defaulted
-  if (this.isNew && !this.clientApprovalMethod) {
-    this.clientApprovalMethod = undefined;
+  // Auto-lock service after all steps are completed
+  if (this.vehicleAttendedBy && this.vehicleAttended && 
+      this.clientApprovalMethod && this.assignedHelper && 
+      this.assignedTechnician && this.typeOfWork && 
+      this.workDone && this.billing !== null && !this.isLocked) {
+    this.isLocked = true;
   }
   
   next();

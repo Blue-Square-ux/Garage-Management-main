@@ -7,9 +7,88 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
-    .form-container { max-width: 800px; margin: 0 auto; }
+    .form-container { max-width: 900px; margin: 0 auto; }
     .step-content { min-height: 300px; }
     .nav-pills .nav-link { margin-right: 5px; }
+    .service-config-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .config-step {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid #fff;
+    }
+    .config-step.completed {
+      border-left-color: #28a745;
+      background: rgba(40, 167, 69, 0.2);
+    }
+    .config-step.current {
+      border-left-color: #ffc107;
+      background: rgba(255, 193, 7, 0.2);
+    }
+    .config-step.locked {
+      border-left-color: #dc3545;
+      background: rgba(220, 53, 69, 0.2);
+    }
+    .step-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+    .step-icon.completed { background: #28a745; }
+    .step-icon.current { background: #ffc107; color: #000; }
+    .step-icon.pending { background: rgba(255,255,255,0.3); }
+    .step-icon.locked { background: #dc3545; }
+    #stepProgressBar {
+      display: flex;
+      gap: 10px;
+    }
+    .step-block {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-weight: 600;
+      color: #666;
+      background-color: transparent;
+      transition: background-color 0.3s, color 0.3s;
+      cursor: default;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .step-block.completed {
+      background-color: #198754;
+      color: white;
+      border-color: #198754;
+    }
+    .step-block.current {
+      background-color: #ffc107;
+      color: black;
+      border-color: #ffc107;
+    }
+    .step-block.incomplete {
+      background-color: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+    .step-block.locked {
+      background-color: #6c757d;
+      color: white;
+      border-color: #6c757d;
+    }
     @media (max-width: 768px) {
       .nav-pills { overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; }
       .nav-item { display: inline-block; }
@@ -27,55 +106,63 @@
   </nav>
 
   <div class="container mt-4 form-container">
-    <h2>Service Details - Floor Manager Panel</h2>
+    <h2>Service Configuration - Floor Manager Panel</h2>
+
+    <!-- Service Configuration Overview -->
+    <div class="service-config-card">
+      <h4><i class="bi bi-gear-fill"></i> Service Configuration Overview</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Vehicle:</strong> <%= service.vehicleNumber %><br>
+          <strong>Gate In:</strong> <%= moment(service.gateInDateTime).format('DD/MM/YYYY HH:mm') %>
+        </div>
+        <div class="col-md-6">
+          <strong>Status:</strong> 
+          <span class="badge <%= service.status === 'completed' ? 'bg-success' : service.status === 'in-progress' ? 'bg-warning' : 'bg-secondary' %>">
+            <%= service.status.toUpperCase() %>
+          </span><br>
+          <% if (service.isLocked) { %>
+            <strong><i class="bi bi-lock-fill text-warning"></i> Service Locked</strong>
+          <% } %>
+        </div>
+      </div>
+      
+      <!-- Configuration Steps Overview -->
+      <div class="row mt-3">
+        <% 
+          const steps = [
+            { id: 'T1', name: 'Vehicle Attended', completed: service.vehicleAttendedBy && service.vehicleAttended },
+            { id: 'T2', name: 'Client Approval', completed: service.clientApprovalMethod },
+            { id: 'T3', name: 'Work Assignment', completed: service.assignedHelper && service.assignedTechnician && service.typeOfWork },
+            { id: 'T4', name: 'Work Completion', completed: service.workDone },
+            { id: 'T5', name: 'Billing Setup', completed: service.billing !== null }
+          ];
+        %>
+        <% steps.forEach((step, index) => { %>
+          <div class="col-md-4 col-sm-6">
+            <div class="config-step <%= step.completed ? 'completed' : 'current' %>">
+              <span class="step-icon <%= step.completed ? 'completed' : 'pending' %>">
+                <% if (step.completed) { %>
+                  <i class="bi bi-check"></i>
+                <% } else { %>
+                  <%= step.id %>
+                <% } %>
+              </span>
+              <strong><%= step.name %></strong>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
 
     <!-- Step Block Progress Bar -->
     <div class="d-flex justify-content-between mb-4" id="stepProgressBar" style="user-select:none;">
-      <div class="step-block completed" data-step="1">T1: Vehicle</div>
+      <div class="step-block" data-step="1">T1: Vehicle</div>
       <div class="step-block" data-step="2">T2: Approval</div>
       <div class="step-block" data-step="3">T3: Assignment</div>
-      <div class="step-block" data-step="4">T4: Work Start</div>
-      <div class="step-block" data-step="5">T5: Completion</div>
-      <div class="step-block" data-step="6">T6: Billing</div>
+      <div class="step-block" data-step="4">T4: Completion</div>
+      <div class="step-block" data-step="5">T5: Billing</div>
     </div>
-
-    <style>
-      #stepProgressBar {
-        display: flex;
-        gap: 10px;
-      }
-      .step-block {
-        flex: 1;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-weight: 600;
-        color: #666;
-        background-color: transparent;
-        transition: background-color 0.3s, color 0.3s;
-        cursor: default;
-        user-select: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-      }
-      .step-block.completed {
-        background-color: #198754; /* Bootstrap green */
-        color: white;
-        border-color: #198754;
-      }
-      .step-block.current {
-        background-color: #ffc107; /* Bootstrap yellow */
-        color: black;
-        border-color: #ffc107;
-      }
-      .step-block.incomplete {
-        background-color: #dc3545; /* Bootstrap red */
-        color: white;
-        border-color: #dc3545;
-      }
-    </style>
 
     <% if (error) { %>
       <div class="alert alert-danger"><%= error %></div>
@@ -104,7 +191,7 @@
     <form id="serviceForm" action="/floor-manager/services/edit/<%= service._id %>" method="POST" novalidate>
       <div class="card">
         <div class="card-header">
-          <h5><i class="bi bi-gear"></i> Service Configuration</h5>
+          <h5><i class="bi bi-list-check"></i> Service Configuration Steps</h5>
         </div>
         <div class="card-body">
           <!-- Step Indicators -->
@@ -126,17 +213,12 @@
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="step4-tab" data-bs-toggle="pill" data-bs-target="#step4" type="button">
-                T4: Work Start
+                T4: Completion
               </button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link" id="step5-tab" data-bs-toggle="pill" data-bs-target="#step6" type="button">
-                T5: Completion
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="step6-tab" data-bs-toggle="pill" data-bs-target="#step5" type="button">
-                T6: Billing
+              <button class="nav-link" id="step5-tab" data-bs-toggle="pill" data-bs-target="#step5" type="button">
+                T5: Billing
               </button>
             </li>
           </ul>
@@ -145,25 +227,31 @@
           <div class="tab-content step-content" id="serviceStepsContent">
             <!-- Step 1: Vehicle Attended -->
             <div class="tab-pane fade show active" id="step1" role="tabpanel">
+              <h5><i class="bi bi-car-front"></i> T1: Vehicle Attendance</h5>
               <div class="mb-3">
-                <label class="form-label">Vehicle Attended *</label>
+                <label class="form-label">Vehicle Attended By *</label>
                 <div class="input-group">
-                  <% if (service.isLocked) { %>
-                    <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" 
-                           value="<%= service.vehicleAttendedBy || '' %>" readonly />
-                    <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" 
-                           value="<%= service.vehicleAttended || '' %>" readonly />
-                    <button type="button" class="btn btn-outline-secondary" disabled>Capture Time</button>
-                  <% } else { %>
-                    <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" 
-                           value="<%= service.vehicleAttendedBy || '' %>" required placeholder="Attendant name" />
-                    <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" 
-                           value="<%= service.vehicleAttended || '' %>" required placeholder="Time attended" />
+                  <input type="text" class="form-control" id="vehicleAttendedBy" name="vehicleAttendedBy" 
+                         value="<%= service.vehicleAttendedBy || '' %>" 
+                         <%= service.vehicleAttendedBy ? 'readonly' : '' %>
+                         required placeholder="Attendant name" />
+                  <input type="text" class="form-control" id="vehicleAttended" name="vehicleAttended" 
+                         value="<%= service.vehicleAttended || '' %>" 
+                         <%= service.vehicleAttended ? 'readonly' : '' %>
+                         required placeholder="Time attended" />
+                  <% if (!service.vehicleAttended) { %>
                     <button type="button" class="btn btn-outline-secondary" id="captureVehicleAttendedTimeBtn">
-                      Capture Time
+                      <i class="bi bi-clock"></i> Capture Time
+                    </button>
+                  <% } else { %>
+                    <button type="button" class="btn btn-outline-secondary" disabled>
+                      <i class="bi bi-lock"></i> Locked
                     </button>
                   <% } %>
                 </div>
+                <% if (service.vehicleAttendedBy) { %>
+                  <small class="text-success"><i class="bi bi-check-circle"></i> Step completed and locked</small>
+                <% } %>
               </div>
               <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right"></i></button>
@@ -171,50 +259,50 @@
             </div>
 
             <!-- Step 2: Client Approval -->
-  <div class="tab-pane fade" id="step2" role="tabpanel">
-  <div class="mb-3">
-    <label class="form-label">Client Approval Method *</label>
-    <% if (service.isLocked) { %>
-      <div class="d-flex align-items-center">
-        <span class="me-2"><%= service.clientApprovalMethod %></span>
-        <small class="text-muted">
-          (<%= moment(service.clientApprovalTime).format('DD/MM/YYYY HH:mm') %>)
-        </small>
-      </div>
-    <% } else { %>
-      <select class="form-select" id="clientApprovalMethod" name="clientApprovalMethod" required>
-        <option value="" disabled selected>Select method</option>
-        <option value="SMS">SMS</option>
-        <option value="WhatsApp">WhatsApp</option>
-        <option value="Call">Call</option>
-      </select>
-      <input type="hidden" id="clientApprovalTime" name="clientApprovalTime" value="<%= service.clientApprovalTime ? service.clientApprovalTime.toISOString() : '' %>" />
-    <% } %>
+<div class="tab-pane fade" id="step2" role="tabpanel">
+  <h5><i class="bi bi-telephone"></i> T2: Client Approval</h5>
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Client Approval Method *</label>
+      <% if (service.clientApprovalMethod) { %>
+        <div class="form-control bg-light">
+          <%= service.clientApprovalMethod %>
+          <small class="text-success d-block"><i class="bi bi-check-circle"></i> Step completed and locked</small>
+        </div>
+        <input type="hidden" name="clientApprovalMethod" value="<%= service.clientApprovalMethod %>" />
+      <% } else { %>
+        <select class="form-select" id="clientApprovalMethod" name="clientApprovalMethod" required>
+          <option value="" disabled selected>Select approval method</option>
+          <option value="SMS">SMS</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Call">Call</option>
+        </select>
+      <% } %>
+      <input type="hidden" id="clientApprovalTime" name="clientApprovalTime" 
+             value="<%= service.clientApprovalTime ? service.clientApprovalTime.toISOString() : '' %>" />
+    </div>
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Approval Time</label>
+      <input type="text" class="form-control" 
+             value="<%= service.clientApprovalTime ? moment(service.clientApprovalTime).format('DD/MM/YYYY HH:mm:ss') : 'Not set' %>" 
+             readonly />
+    </div>
   </div>
   <div class="d-flex justify-content-between">
-    <button type="button" class="btn btn-secondary prev-step">Previous</button>
-    <button type="button" class="btn btn-primary next-step">Next</button>
+    <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
+    <button type="button" class="btn btn-primary next-step" id="approvalNextBtn">Next <i class="bi bi-arrow-right"></i></button>
   </div>
 </div>
 
-<script>
-  document.getElementById('clientApprovalMethod')?.addEventListener('change', function() {
-    const clientApprovalTimeInput = document.getElementById('clientApprovalTime');
-    if (this.value) {
-      clientApprovalTimeInput.value = new Date().toISOString();
-    } else {
-      clientApprovalTimeInput.value = '';
-    }
-  });
-</script>
-
             <!-- Step 3: Assignment -->
             <div class="tab-pane fade" id="step3" role="tabpanel">
+              <h5><i class="bi bi-people"></i> T3: Work Assignment</h5>
               <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Assigned Helper *</label>
-                  <% if (service.isLocked) { %>
-                    <input type="text" class="form-control" value="<%= service.assignedHelper || 'Not set' %>" readonly />
+                  <% if (service.assignedHelper) { %>
+                    <input type="text" class="form-control bg-light" value="<%= service.assignedHelper %>" readonly />
+                    <input type="hidden" name="assignedHelper" value="<%= service.assignedHelper %>" />
                   <% } else { %>
                     <select class="form-select" id="assignedHelper" name="assignedHelper" required>
                       <option value="">Select helper</option>
@@ -224,10 +312,11 @@
                     </select>
                   <% } %>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Assigned Technician *</label>
-                  <% if (service.isLocked) { %>
-                    <input type="text" class="form-control" value="<%= service.assignedTechnician || 'Not set' %>" readonly />
+                  <% if (service.assignedTechnician) { %>
+                    <input type="text" class="form-control bg-light" value="<%= service.assignedTechnician %>" readonly />
+                    <input type="hidden" name="assignedTechnician" value="<%= service.assignedTechnician %>" />
                   <% } else { %>
                     <select class="form-select" id="assignedTechnician" name="assignedTechnician" required>
                       <option value="">Select technician</option>
@@ -237,12 +326,23 @@
                     </select>
                   <% } %>
                 </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Bay Number *</label>
+                  <% if (service.bayNumber) { %>
+                    <input type="text" class="form-control bg-light" value="<%= service.bayNumber %>" readonly />
+                    <input type="hidden" name="bayNumber" value="<%= service.bayNumber %>" />
+                  <% } else { %>
+                    <input type="text" class="form-control" id="bayNumber" name="bayNumber" 
+                           value="<%= service.bayNumber || '' %>" required placeholder="Enter bay number" />
+                  <% } %>
+                </div>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Type of Work *</label>
-                  <% if (service.isLocked) { %>
-                    <input type="text" class="form-control" value="<%= service.typeOfWork || 'Not set' %>" readonly />
+                  <% if (service.typeOfWork) { %>
+                    <input type="text" class="form-control bg-light" value="<%= service.typeOfWork %>" readonly />
+                    <input type="hidden" name="typeOfWork" value="<%= service.typeOfWork %>" />
                   <% } else { %>
                     <select class="form-select" id="typeOfWork" name="typeOfWork" required>
                       <option value="">Select work type</option>
@@ -254,46 +354,53 @@
                   <% } %>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Estimated Time *</label>
+                  <label class="form-label">Estimated Time (HH:mm:ss) *</label>
                   <div class="input-group">
-                    <% if (service.isLocked) { %>
-                      <input type="text" class="form-control" 
+                    <% if (service.estimatedCompletionTime) { %>
+                      <input type="text" class="form-control bg-light" 
                              value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : 'Not set' %>" 
                              readonly />
+                      <input type="hidden" name="estimatedTime" 
+                             value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : '' %>" />
                     <% } else { %>
                       <input type="text" class="form-control" id="estimatedTime" name="estimatedTime" 
                              pattern="^([0-9]{1,2}):([0-5][0-9]):([0-5][0-9])$" 
                              value="<%= service.estimatedCompletionTime ? moment.utc(moment(service.estimatedCompletionTime).diff(moment(service.gateInDateTime))).format('HH:mm:ss') : '' %>" 
-                             required />
+                             required placeholder="02:00:00" />
                       <button type="button" class="btn btn-outline-secondary" id="fillEstimatedTimeBtn">
-                        <i class="bi bi-clock"></i> Default
+                        <i class="bi bi-clock"></i> 2h Default
                       </button>
                     <% } %>
                   </div>
                 </div>
               </div>
+              <% if (service.assignedHelper && service.assignedTechnician && service.typeOfWork && service.bayNumber) { %>
+                <small class="text-success"><i class="bi bi-check-circle"></i> Step completed and locked</small>
+              <% } %>
+              <!-- Hidden time capture for T3 -->
+              <input type="hidden" id="assignmentTime" name="assignmentTime" 
+                     value="<%= service.assignmentTime ? service.assignmentTime.toISOString() : '' %>" />
               <div class="d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
                 <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right"></i></button>
               </div>
             </div>
 
-            <!-- Step 4: Work Start -->
+            <!-- Step 4: Completion -->
             <div class="tab-pane fade" id="step4" role="tabpanel">
-              <div class="mb-3">
-                <label class="form-label">Work Started At *</label>
-                <div class="input-group">
-                  <% if (service.isLocked) { %>
-                    <input type="text" class="form-control" 
-                           value="<%= moment(service.workStartedAt).format('YYYY-MM-DD HH:mm:ss') %>" readonly />
-                  <% } else { %>
-                    <input type="text" class="form-control" id="workStartedAt" name="workStartedAt" 
-                           value="<%= moment(service.workStartedAt).format('YYYY-MM-DD HH:mm:ss') %>" required />
-                    <button type="button" class="btn btn-outline-secondary" id="captureWorkStartedAtBtn">
-                      Capture Time
-                    </button>
-                  <% } %>
-                </div>
+              <h5><i class="bi bi-check-circle"></i> T4: Work Completion</h5>
+              <div class="mb-3 form-check">
+                <% if (service.workDone) { %>
+                  <input type="checkbox" class="form-check-input" checked disabled />
+                  <label class="form-check-label">Work Completed</label>
+                  <input type="hidden" name="workDone" value="true" />
+                  <small class="text-success d-block"><i class="bi bi-check-circle"></i> Step completed and locked</small>
+                <% } else { %>
+                  <input type="checkbox" class="form-check-input" id="workDone" name="workDone" />
+                  <label class="form-check-label" for="workDone">Work Completed</label>
+                <% } %>
+                <input type="hidden" id="workDoneTime" name="workDoneTime" 
+                       value="<%= service.workDoneTime ? moment(service.workDoneTime).toISOString() : '' %>" />
               </div>
               <div class="d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
@@ -302,181 +409,305 @@
             </div>
 
             <!-- Step 5: Billing -->
-            <div class="tab-pane fade" id="step6" role="tabpanel">
-              <div class="mb-3 form-check">
-                <% if (service.isLocked) { %>
-                  <input type="checkbox" class="form-check-input" disabled <%= service.workDone ? 'checked' : '' %> />
-                  <label class="form-check-label">Work Done</label>
-                <% } else { %>
-                  <input type="checkbox" class="form-check-input" id="workDone" name="workDone" <%= service.workDone ? 'checked' : '' %> />
-                  <label class="form-check-label" for="workDone">Work Done</label>
-                  <input type="hidden" id="workDoneTime" name="workDoneTime" 
-                         value="<%= service.workDoneTime ? moment(service.workDoneTime).toISOString() : '' %>" />
-                <% } %>
-              </div>
-              <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
-                 <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right"></i></button>
-              </div>
-            </div>
-
-            <!-- Step 6: Completion -->
             <div class="tab-pane fade" id="step5" role="tabpanel">
+              <h5><i class="bi bi-receipt"></i> T5: Billing Setup</h5>
               <div class="mb-3 form-check">
-                <% if (service.isLocked) { %>
-                  <input type="checkbox" class="form-check-input" disabled <%= service.billing ? 'checked' : '' %> />
+                <% if (service.billing !== null) { %>
+                  <input type="checkbox" class="form-check-input" <%= service.billing ? 'checked' : '' %> disabled />
                   <label class="form-check-label">Billing Required</label>
+                  <input type="hidden" name="billing" value="<%= service.billing %>" />
+                  <small class="text-success d-block"><i class="bi bi-check-circle"></i> Step completed and locked</small>
                 <% } else { %>
-                  <input type="checkbox" class="form-check-input" id="billing" name="billing" <%= service.billing ? 'checked' : '' %> />
+                  <input type="checkbox" class="form-check-input" id="billing" name="billing" />
                   <label class="form-check-label" for="billing">Billing Required</label>
                 <% } %>
               </div>
               <div class="d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary prev-step"><i class="bi bi-arrow-left"></i> Previous</button>
-               
-                <!--  -->
-                <% if (!service.isLocked) { %>
-                  <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Complete Service
-                  </button>
-                <% } else { %>
-                  <a href="/floor-manager/services" class="btn btn-primary">
-                    <i class="bi bi-list-ul"></i> Back to Services
-                  </a>
-                <% } %>
-                <!--  -->
-              
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-check-circle"></i> Save Configuration
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <input type="hidden" name="status" value="<%= service.status %>" />
+      <input type="hidden" name="status" id="statusField" value="<%= service.status %>" />
     </form>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      // Step Navigation
-      document.querySelectorAll('.next-step').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const currentTab = document.querySelector('#serviceStepsTab .nav-link.active');
-          const nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.nav-link');
-          if (nextTab) new bootstrap.Tab(nextTab).show();
-        });
-      });
-
-      document.querySelectorAll('.prev-step').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const currentTab = document.querySelector('#serviceStepsTab .nav-link.active');
-          const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-          if (prevTab) new bootstrap.Tab(prevTab).show();
-        });
-      });
-
-      // Time Capture Functions (keep your existing ones)
-      document.getElementById('captureVehicleAttendedTimeBtn')?.addEventListener('click', () => {
-        const now = new Date();
-        document.getElementById('vehicleAttended').value = now.toLocaleTimeString('en-GB', { hour12: false });
-      });
-
-      document.getElementById('captureWorkStartedAtBtn')?.addEventListener('click', () => {
-        const now = new Date();
-        const formatted = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-        document.getElementById('workStartedAt').value = formatted;
-      });
-
-      document.getElementById('fillEstimatedTimeBtn')?.addEventListener('click', () => {
-        document.getElementById('estimatedTime').value = '02:00:00';
-      });
-
-      document.getElementById('workDone')?.addEventListener('change', function() {
-        if (this.checked) {
-          document.getElementById('workDoneTime').value = new Date().toISOString();
-        } else {
-          document.getElementById('workDoneTime').value = '';
+  <script>
+    // Step Navigation with locking functionality
+    document.querySelectorAll('.next-step').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const currentTab = document.querySelector('#serviceStepsTab .nav-link.active');
+        const currentStepIndex = Array.from(document.querySelectorAll('#serviceStepsTab .nav-link')).indexOf(currentTab);
+        
+        // Validate current step before proceeding
+        if (!validateCurrentStep(currentStepIndex + 1)) {
+          return;
         }
+        
+        // Lock current step data when moving to next
+        lockCurrentStep(currentStepIndex + 1);
+        
+        // Update service status based on completed steps
+        updateServiceStatus();
+        
+        const nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.nav-link');
+        if (nextTab) new bootstrap.Tab(nextTab).show();
       });
+    });
 
-      // Form Validation
-      (function() {
-        const form = document.getElementById('serviceForm');
-        if (form) {
-          form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-              event.preventDefault();
-              event.stopPropagation();
+    document.querySelectorAll('.prev-step').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const currentTab = document.querySelector('#serviceStepsTab .nav-link.active');
+        const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
+        if (prevTab) new bootstrap.Tab(prevTab).show();
+      });
+    });
+
+    // Function to validate current step
+    function validateCurrentStep(stepNumber) {
+      switch(stepNumber) {
+        case 1: // T1: Vehicle
+          const vehicleAttendedBy = document.getElementById('vehicleAttendedBy');
+          const vehicleAttended = document.getElementById('vehicleAttended');
+          if (!vehicleAttendedBy.value || !vehicleAttended.value) {
+            alert('Please fill in both Vehicle Attended By and Time fields');
+            return false;
+          }
+          break;
+        case 2: // T2: Approval
+          const clientApprovalMethod = document.getElementById('clientApprovalMethod');
+          if (clientApprovalMethod && !clientApprovalMethod.value) {
+            alert('Please select a Client Approval Method');
+            return false;
+          }
+          break;
+        case 3: // T3: Assignment
+          const assignedHelper = document.getElementById('assignedHelper');
+          const assignedTechnician = document.getElementById('assignedTechnician');
+          const typeOfWork = document.getElementById('typeOfWork');
+          const bayNumber = document.getElementById('bayNumber');
+          const estimatedTime = document.getElementById('estimatedTime');
+          
+          if (!assignedHelper.value || !assignedTechnician.value || !typeOfWork.value || !bayNumber.value || !estimatedTime.value) {
+            alert('Please fill in all required fields in the Assignment section');
+            return false;
+          }
+          break;
+      }
+      return true;
+    }
+
+    // Function to lock current step
+    function lockCurrentStep(stepNumber) {
+      switch(stepNumber) {
+        case 1: // T1: Vehicle
+          const vehicleAttendedBy = document.getElementById('vehicleAttendedBy');
+          const vehicleAttended = document.getElementById('vehicleAttended');
+          if (vehicleAttendedBy && vehicleAttended && vehicleAttendedBy.value && vehicleAttended.value) {
+            vehicleAttendedBy.readOnly = true;
+            vehicleAttended.readOnly = true;
+            const captureBtn = document.getElementById('captureVehicleAttendedTimeBtn');
+            if (captureBtn) {
+              captureBtn.disabled = true;
+              captureBtn.innerHTML = '<i class="bi bi-lock"></i> Locked';
             }
-            form.classList.add('was-validated');
-          }, false);
-        }
-      })();
-
-      // Step Block Progress Bar Update
-      (function() {
-        const stepBlocks = document.querySelectorAll('#stepProgressBar .step-block');
-        const tabs = document.querySelectorAll('#serviceStepsTab .nav-link');
-
-        // Map step number to required field selectors in each step
-        const stepRequiredFields = {
-          1: ['#vehicleAttendedBy', '#vehicleAttended'],
-          2: ['#clientApprovalMethod'],
-          3: ['#assignedHelper', '#assignedTechnician', '#typeOfWork', '#estimatedTime'],
-          4: ['#workStartedAt'],
-          5: ['#billing'],
-          6: ['#workDone']
-        };
-
-        // Function to check if all required fields in a step are filled
-        function isStepComplete(step) {
-          const selectors = stepRequiredFields[step];
-          if (!selectors) return true; // no required fields defined
-          return selectors.every(selector => {
-            const el = document.querySelector(selector);
-            if (!el) return true; // if element not found, consider complete
-            if (el.type === 'checkbox') return el.checked;
-            // Special check for step 4: treat '0000-00-00 00:00:00' or empty as incomplete
-            if (step === 4) {
-              if (!el.value || el.value.trim() === '' || el.value.trim() === '0000-00-00 00:00:00') {
-                return false;
-              }
+          }
+          break;
+        case 2: // T2: Approval
+          const clientApprovalMethod = document.getElementById('clientApprovalMethod');
+          if (clientApprovalMethod && clientApprovalMethod.value) {
+            clientApprovalMethod.disabled = true;
+            // Capture approval time
+            document.getElementById('clientApprovalTime').value = new Date().toISOString();
+          }
+          break;
+        case 3: // T3: Assignment
+          const assignedHelper = document.getElementById('assignedHelper');
+          const assignedTechnician = document.getElementById('assignedTechnician');
+          const typeOfWork = document.getElementById('typeOfWork');
+          const bayNumber = document.getElementById('bayNumber');
+          const estimatedTime = document.getElementById('estimatedTime');
+          
+          if (assignedHelper && assignedTechnician && typeOfWork && bayNumber && estimatedTime &&
+              assignedHelper.value && assignedTechnician.value && typeOfWork.value && bayNumber.value && estimatedTime.value) {
+            assignedHelper.disabled = true;
+            assignedTechnician.disabled = true;
+            typeOfWork.disabled = true;
+            bayNumber.readOnly = true;
+            estimatedTime.readOnly = true;
+            // Capture assignment time
+            document.getElementById('assignmentTime').value = new Date().toISOString();
+            const fillBtn = document.getElementById('fillEstimatedTimeBtn');
+            if (fillBtn) {
+              fillBtn.disabled = true;
+              fillBtn.innerHTML = '<i class="bi bi-lock"></i> Locked';
             }
-            return el.value.trim() !== '';
-          });
-        }
+          }
+          break;
+        case 4: // T4: Completion
+          const workDone = document.getElementById('workDone');
+          if (workDone && workDone.checked) {
+            workDone.disabled = true;
+            document.getElementById('workDoneTime').value = new Date().toISOString();
+          }
+          break;
+        case 5: // T5: Billing
+          const billing = document.getElementById('billing');
+          if (billing) {
+            billing.disabled = true;
+          }
+          break;
+      }
+    }
 
-        function updateStepProgress() {
-          const activeIndex = Array.from(tabs).findIndex(tab => tab.classList.contains('active'));
-          stepBlocks.forEach((block, index) => {
-            block.classList.remove('completed', 'current', 'incomplete');
-            const stepNum = index + 1;
-            if (index < activeIndex) {
-              if (isStepComplete(stepNum)) {
-                block.classList.add('completed');
-              } else {
-                block.classList.add('incomplete');
-              }
-            } else if (index === activeIndex) {
-              block.classList.add('current');
-            }
-          });
-        }
+    // Function to update service status based on completed steps
+    function updateServiceStatus() {
+      const statusField = document.getElementById('statusField');
+      
+      // Check if T1 and T2 are completed
+      const t1Completed = document.getElementById('vehicleAttendedBy').readOnly;
+      const t2Completed = document.getElementById('clientApprovalMethod') ? 
+                          document.getElementById('clientApprovalMethod').disabled : false;
+      
+      if (t1Completed && t2Completed) {
+        statusField.value = 'in-progress';
+      } else if (!t1Completed || !t2Completed) {
+        statusField.value = 'pending';
+      }
+      
+      // Check if all steps are completed
+      const t3Completed = document.getElementById('assignedHelper') ? 
+                          document.getElementById('assignedHelper').disabled : false;
+      const t4Completed = document.getElementById('workDone') ? 
+                          document.getElementById('workDone').disabled : false;
+      const t5Completed = document.getElementById('billing') ? 
+                          document.getElementById('billing').disabled : false;
+      
+      if (t1Completed && t2Completed && t3Completed && t4Completed && t5Completed) {
+        statusField.value = 'completed';
+      }
+    }
 
-        tabs.forEach(tab => {
-          tab.addEventListener('shown.bs.tab', updateStepProgress);
-        });
+    // Time Capture Functions
+    document.getElementById('captureVehicleAttendedTimeBtn')?.addEventListener('click', () => {
+      const now = new Date();
+      document.getElementById('vehicleAttended').value = now.toLocaleTimeString('en-GB', { hour12: false });
+    });
 
-        // Also update progress on input/change events for required fields
-        Object.values(stepRequiredFields).flat().forEach(selector => {
+    document.getElementById('fillEstimatedTimeBtn')?.addEventListener('click', () => {
+      document.getElementById('estimatedTime').value = '02:00:00';
+    });
+
+    // Client approval method change handler
+    document.getElementById('clientApprovalMethod')?.addEventListener('change', function() {
+      const clientApprovalTimeInput = document.getElementById('clientApprovalTime');
+      if (this.value) {
+        clientApprovalTimeInput.value = new Date().toISOString();
+      } else {
+        clientApprovalTimeInput.value = '';
+      }
+    });
+
+    // Work done change handler
+    document.getElementById('workDone')?.addEventListener('change', function() {
+      if (this.checked) {
+        document.getElementById('workDoneTime').value = new Date().toISOString();
+      } else {
+        document.getElementById('workDoneTime').value = '';
+      }
+    });
+
+    // Form Validation
+    (function() {
+      const form = document.getElementById('serviceForm');
+      if (form) {
+        form.addEventListener('submit', function(event) {
+          if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        }, false);
+      }
+    })();
+
+    // Step Block Progress Bar Update
+    (function() {
+      const stepBlocks = document.querySelectorAll('#stepProgressBar .step-block');
+      const tabs = document.querySelectorAll('#serviceStepsTab .nav-link');
+
+      // Map step number to required field selectors in each step
+      const stepRequiredFields = {
+        1: ['#vehicleAttendedBy', '#vehicleAttended'],
+        2: ['#clientApprovalMethod'],
+        3: ['#assignedHelper', '#assignedTechnician', '#typeOfWork', '#bayNumber', '#estimatedTime'],
+        4: ['#workDone'],
+        5: ['#billing']
+      };
+
+      // Function to check if all required fields in a step are filled
+      function isStepComplete(step) {
+        const selectors = stepRequiredFields[step];
+        if (!selectors) return true;
+        return selectors.every(selector => {
           const el = document.querySelector(selector);
-          if (el) {
-            el.addEventListener('input', updateStepProgress);
-            el.addEventListener('change', updateStepProgress);
+          if (!el) return true;
+          if (el.type === 'checkbox') return el.checked;
+          return el.value.trim() !== '';
+        });
+      }
+
+      function updateStepProgress() {
+        const activeIndex = Array.from(tabs).findIndex(tab => tab.classList.contains('active'));
+        stepBlocks.forEach((block, index) => {
+          block.classList.remove('completed', 'current', 'incomplete', 'locked');
+          const stepNum = index + 1;
+          if (index < activeIndex) {
+            if (isStepComplete(stepNum)) {
+              block.classList.add('completed');
+            } else {
+              block.classList.add('incomplete');
+            }
+          } else if (index === activeIndex) {
+            block.classList.add('current');
           }
         });
+      }
 
-        updateStepProgress();
-      })();
-    </script>
+      tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', updateStepProgress);
+      });
+
+      // Also update progress on input/change events for required fields
+      Object.values(stepRequiredFields).flat().forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+          el.addEventListener('input', updateStepProgress);
+          el.addEventListener('change', updateStepProgress);
+        }
+      });
+
+      updateStepProgress();
+    })();
+
+    // Initialize the form state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Lock steps that are already completed
+      if (document.getElementById('vehicleAttendedBy').readOnly) lockCurrentStep(1);
+      if (document.getElementById('clientApprovalMethod')?.disabled) lockCurrentStep(2);
+      if (document.getElementById('assignedHelper')?.disabled) lockCurrentStep(3);
+      if (document.getElementById('workDone')?.disabled) lockCurrentStep(4);
+      if (document.getElementById('billing')?.disabled) lockCurrentStep(5);
+      
+      // Update the progress bar
+      const event = new Event('input');
+      document.querySelectorAll('input, select').forEach(el => el.dispatchEvent(event));
+    });
+  </script>
 </body>
 </html>

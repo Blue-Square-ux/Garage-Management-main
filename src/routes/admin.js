@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+console.log("Handlers:", Object.keys(adminController));
 
 // Admin dashboard and analytics routes
 router.get('/dashboard', adminController.dashboard);
-router.get('/notifications', adminController.getNotifications);
+// router.get('/notifications', adminController.getNotifications);
 router.get('/analytics', adminController.getAnalytics);
 router.get('/services/delayed', adminController.getDelayedServices);
 
